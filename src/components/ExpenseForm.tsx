@@ -1,16 +1,27 @@
 import { useState } from "react";
+import { Expense } from "../types/expense";  // ✅ Import Type
 
-export default function ExpenseForm({ addExpense }) {
+interface ExpenseFormProps {
+  addExpense: (expense: Omit<Expense, "id">) => Promise<void>;
+}
+
+export default function ExpenseForm({ addExpense }: ExpenseFormProps) {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => { // ✅ Fix Type
     e.preventDefault();
     if (!name || !amount) return;
 
-    addExpense({ name, amount: parseFloat(amount) });
-    setName("");
-    setAmount("");
+    try {
+      await addExpense({ name, amount: parseFloat(amount) });
+
+      // Reset form after successful submission
+      setName("");
+      setAmount("");
+    } catch (error) {
+      console.error("Error adding expense:", error);
+    }
   };
 
   return (

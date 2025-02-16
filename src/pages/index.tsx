@@ -1,39 +1,57 @@
 import { useState, useEffect } from "react";
 import ExpenseList from "../components/ExpenseList";
 import ExpenseForm from "../components/ExpenseForm";
+import { Expense } from "../types/expense";  // ✅ Import Type
 
 export default function Home() {
-  const [expenses, setExpenses] = useState([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]); // ✅ Added Type
 
-  // Fetch Expenses
+  // Fetch Expenses with error handling
   useEffect(() => {
-    fetch("http://localhost:3001/api/expenses")
-      .then((res) => res.json())
-      .then((data) => setExpenses(data));
+    const fetchExpenses = async () => {
+      try {
+        const res = await fetch("http://localhost:3001/api/expenses");
+        if (!res.ok) throw new Error("Failed to fetch expenses");
+        const data: Expense[] = await res.json();
+        setExpenses(data);
+      } catch (error) {
+        console.error("Error fetching expenses:", error);
+      }
+    };
+
+    fetchExpenses();
   }, []);
 
-  // Add Expense
-  const addExpense = async (expense) => {
-    const res = await fetch("http://localhost:3001/api/create-expense", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(expense),
-    });
+  // Add Expense with proper type
+  const addExpense = async (expense: Omit<Expense, "id">) => {
+    try {
+      const res = await fetch("http://localhost:3001/api/create-expense", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(expense),
+      });
 
-    if (res.ok) {
-      const newExpense = await res.json();
-      setExpenses([...expenses, newExpense]);
+      if (!res.ok) throw new Error("Failed to add expense");
+
+      const newExpense: Expense = await res.json();
+      setExpenses((prevExpenses) => [...prevExpenses, newExpense]); // ✅ Fixes Type Issue
+    } catch (error) {
+      console.error("Error adding expense:", error);
     }
   };
 
-  // Delete Expense
-  const deleteExpense = async (id) => {
-    const res = await fetch(`http://localhost:3001/api/expense/${id}`, {
-      method: "DELETE",
-    });
+  // Delete Expense with proper type
+  const deleteExpense = async (id: string) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/expense/${id}`, {
+        method: "DELETE",
+      });
 
-    if (res.ok) {
-      setExpenses(expenses.filter((expense) => expense.id !== id));
+      if (!res.ok) throw new Error("Failed to delete expense");
+
+      setExpenses((prevExpenses) => prevExpenses.filter((expense) => expense.id !== id));
+    } catch (error) {
+      console.error("Error deleting expense:", error);
     }
   };
 
